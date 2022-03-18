@@ -25,6 +25,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/scraper/tsconfig.app.json"
       }
+    },
+    "message-broker-client": {
+      "type": "library",
+      "root": "libs/message-broker-client",
+      "entryFile": "index",
+      "sourceRoot": "libs/message-broker-client/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/message-broker-client/tsconfig.lib.json"
+      }
     }
   }
 }

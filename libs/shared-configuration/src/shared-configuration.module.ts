@@ -11,6 +11,7 @@ import { ConfigModule } from '@nestjs/config';
         CACHE_CONNECTION: Joi.string().required(),
         MESSAGE_BROKER_CONNECTION: Joi.string().required(),
         API_HTTP_PORT: Joi.number().required(),
+        SCRAPER_HTTP_PORT: Joi.number().required(),
       }),
       validationOptions: {
         allowUnknown: true, // must be true or NVM internal env variables break code

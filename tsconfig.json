@@ -35,6 +35,12 @@
       ],
       "@app/shared-configuration/*": [
         "libs/shared-configuration/src/*"
+      ],
+      "@app/message-broker-client": [
+        "libs/message-broker-client/src"
+      ],
+      "@app/message-broker-client/*": [
+        "libs/message-broker-client/src/*"
       ]
     }
   }

@@ -1,5 +1,4 @@
 import {
-  ArgumentsHost,
   Catch,
   ExceptionFilter,
   HttpException,
@@ -9,7 +8,7 @@ import { MongoServerError } from 'mongodb';
 
 @Catch(MongoServerError)
 export class MongoExceptionFilter<MongoServerError> implements ExceptionFilter {
-  catch(exception: MongoServerError, host: ArgumentsHost) {
+  catch(exception: MongoServerError) {
     throw new HttpException(exception, HttpStatus.BAD_REQUEST);
   }
 }
