@@ -42,7 +42,8 @@ $ docker run --name some-rabbitmq -p 5672:5672 -p 15672:15672 -d --hostname my-r
 ```
 
 This will pull RabbitMQ image if you do not have it already installed and start the container. It will expose RabbitMQ
-on default port 5672 with default settings and authentication. It will also expose RabbitMQ Management on `http://localhost:15672`.
+on default port 5672 with default settings and authentication. It will also expose RabbitMQ Management
+on `http://localhost:15672`.
 
 ## Environment variables
 
