@@ -11,6 +11,7 @@ import { MongoExceptionFilter } from './mongo-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
+    // TODO - logger
     ApiModule,
     new FastifyAdapter(),
   );
