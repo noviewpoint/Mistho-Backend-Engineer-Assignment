@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
 import { GlassdoorService } from './glassdoor.service';
+import { MessagePattern } from '@nestjs/microservices';
 
 @Controller('glassdoor')
 export class GlassdoorController {
@@ -8,6 +8,6 @@ export class GlassdoorController {
 
   @MessagePattern({ cmd: 'scrape' })
   async scrape() {
-    await this.glassdoorService.work();
+    // await this.glassdoorService.work();
   }
 }
