@@ -11,7 +11,6 @@ import { ConfigService } from '@nestjs/config';
       useFactory: async (configService: ConfigService) => {
         // TODO - CHANGE THIS TO SUPPORT MULTIPLE QUEUES PER CLIENT
         // Nest waits for rmq connection to be resolved before starting the application
-        console.log(123);
         return ClientProxyFactory.create({
           transport: Transport.RMQ,
           options: {
