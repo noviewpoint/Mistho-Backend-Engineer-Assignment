@@ -9,18 +9,19 @@ import { ConfigService } from '@nestjs/config';
     {
       provide: 'MESSAGE_BROKER_CLIENT',
       useFactory: async (configService: ConfigService) => {
-        for (const queue of [configService.get<string>('GLASSDOOR_QUEUE')]) {
-          return ClientProxyFactory.create({
-            transport: Transport.RMQ,
-            options: {
-              urls: [configService.get<string>('MESSAGE_BROKER_CONNECTION')],
-              queue,
-              queueOptions: {
-                durable: true,
-              },
+        // TODO - CHANGE THIS TO SUPPORT MULTIPLE QUEUES PER CLIENT
+        // Nest waits for rmq connection to be resolved before starting the application
+        console.log(123);
+        return ClientProxyFactory.create({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('MESSAGE_BROKER_CONNECTION')],
+            queue: configService.get<string>('GLASSDOOR_QUEUE'),
+            queueOptions: {
+              durable: true,
             },
-          });
-        }
+          },
+        });
       },
       inject: [ConfigService],
     },
