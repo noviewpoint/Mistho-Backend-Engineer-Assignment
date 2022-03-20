@@ -39,7 +39,7 @@ export class GlassdoorService {
 
   private async getConfiguredPage(browser: Browser): Promise<Page> {
     const page = await browser.newPage();
-    // TODO - workaround so typescript lets access to _client (private prop)
+    // TODO - atm this is workaround so typescript compiler allows access to _client (private prop)
     await page['_client'].send('Page.setDownloadBehavior', {
       behavior: 'allow',
       downloadPath: process.cwd(),
@@ -121,42 +121,150 @@ export class GlassdoorService {
     await page.waitForSelector('#UserProfile', { timeout: 1000 });
     // #UserProfile must be populated with SPA data to successfully scrape the user profile
     const html = await page.content();
-    const [userProfileWhole] = this.utilsService.getElementsFromDom(
-      '#UserProfile',
-      html,
-    );
 
-    const profileInfo = this.utilsService.getTextFromDom(
-      '#ProfileInfo',
-      userProfileWhole,
-    );
-    const aboutMe = this.utilsService.getTextFromDom(
-      '#AboutMe',
-      userProfileWhole,
-    );
-    const experience = this.utilsService.getTextFromDom(
-      '#Experience',
-      userProfileWhole,
-    );
-    const skills = this.utilsService.getTextFromDom(
-      '#Skills',
-      userProfileWhole,
-    );
-    const education = this.utilsService.getTextFromDom(
-      '#Education',
-      userProfileWhole,
-    );
-    const certification = this.utilsService.getTextFromDom(
-      '#Certification',
-      userProfileWhole,
-    );
+    const [employee] = this.utilsService
+      .getElementsFromDom('#ProfileInfo div:has(> h3)', html)
+      .map((el) => {
+        return this.utilsService.getTextFromDom('h3', el);
+      });
+
+    const [employeePosition, employeeEmail, employeeLocation] =
+      this.utilsService
+        .getElementsFromDom('#ProfileInfo > div > div > div > div > div', html)
+        .map((el) => {
+          return this.utilsService.getTextFromDom(
+            'div:has(> span > svg) ~ div',
+            el,
+          );
+        })
+        .filter((text) => {
+          return (
+            text &&
+            !(
+              text.includes('View as:') ||
+              text.includes('Add website') ||
+              text.includes('Add phone number')
+            )
+          );
+        });
+
+    const [aboutMe] = this.utilsService
+      .getElementsFromDom('#AboutMe', html)
+      .map((el) => {
+        return this.utilsService.getTextFromDom(
+          'p[data-test="description"]',
+          el,
+        );
+      });
+    const experience = this.utilsService
+      .getElementsFromDom('#UserProfile #Experience li', html)
+      .map((el) => {
+        return {
+          title: this.utilsService.getTextFromDom('h3[data-test="title"]', el),
+          employer: this.utilsService.getTextFromDom(
+            'div[data-test="employer"]',
+            el,
+          ),
+          location: this.utilsService.getTextFromDom(
+            'label[data-test="location"]',
+            el,
+          ),
+          timePeriod: this.utilsService.getTextFromDom(
+            'div[data-test="employmentperiod"]',
+            el,
+          ),
+          description: {
+            main: this.utilsService
+              .getTextFromDom('p[data-test="description"]', el)
+              .split(/\r?\n/)[0],
+            workResponsibilities: this.utilsService
+              .getTextFromDom('p[data-test="description"]', el)
+              .split(/\r?\n/)
+              .slice(1)
+              .filter((x) => x),
+          },
+        };
+      });
+    const skills = this.utilsService
+      .getElementsFromDom(
+        '#UserProfile #Skills div[data-test="skillList"] div',
+        html,
+      )
+      .map((el) => {
+        return { title: this.utilsService.getTextFromDom('span', el) };
+      });
+    const education = this.utilsService
+      .getElementsFromDom('#UserProfile #Education li', html)
+      .map((el) => {
+        return {
+          title: this.utilsService.getTextFromDom(
+            'div[data-test="degree"]',
+            el,
+          ),
+          employer: this.utilsService.getTextFromDom(
+            'h3[data-test="university"]',
+            el,
+          ),
+          location: this.utilsService.getTextFromDom(
+            'label[data-test="location"]',
+            el,
+          ),
+          timePeriod: this.utilsService.getTextFromDom(
+            'div[data-test="graduationDate"]',
+            el,
+          ),
+          description: {
+            main: this.utilsService
+              .getTextFromDom('p[data-test="description"]', el)
+              .split(/\r?\n/)[0],
+            workResponsibilities: this.utilsService
+              .getTextFromDom('p[data-test="description"]', el)
+              .split(/\r?\n/)
+              .slice(1)
+              .filter((x) => x),
+          },
+        };
+      });
+    const certifications = this.utilsService
+      .getElementsFromDom('#UserProfile #Certification li', html)
+      .map((el) => {
+        return {
+          title: this.utilsService.getTextFromDom('div[data-test="title"]', el),
+          employer: this.utilsService.getTextFromDom(
+            'div[data-test="employer"]',
+            el,
+          ),
+          period: this.utilsService.getTextFromDom(
+            'div[data-test="certificationperiod"]',
+            el,
+          ),
+          description: {
+            main: this.utilsService
+              .getTextFromDom('p[data-test="description"]', el)
+              .split(/\r?\n/)[0],
+            workResponsibilities: this.utilsService
+              .getTextFromDom('p[data-test="description"]', el)
+              .split(/\r?\n/)
+              .slice(1)
+              .filter((x) => x),
+          },
+        };
+      });
 
     // TODO - handle failure when saving to db
-    await this.db
-      .collection('employee')
-      .insertMany([
-        { profileInfo, aboutMe, experience, skills, education, certification },
-      ]);
+    await this.db.collection('employee').insertMany([
+      {
+        employee,
+        employeePosition,
+        employeeEmail,
+        employeeLocation,
+        aboutMe,
+        experience,
+        skills,
+        education,
+        certifications,
+      },
+    ]);
 
     console.log('scrapeUserProfile finished');
   }
