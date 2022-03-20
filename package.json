@@ -93,7 +93,8 @@
       "^@app/utils(|/.*)$": "<rootDir>/libs/utils/src/$1",
       "^@app/database-client(|/.*)$": "<rootDir>/libs/database-client/src/$1",
       "^@app/shared-configuration(|/.*)$": "<rootDir>/libs/shared-configuration/src/$1",
-      "^@app/message-broker-client(|/.*)$": "<rootDir>/libs/message-broker-client/src/$1"
+      "^@app/message-broker-client(|/.*)$": "<rootDir>/libs/message-broker-client/src/$1",
+      "^@app/employee(|/.*)$": "<rootDir>/libs/employee/src/$1"
     }
   }
 }

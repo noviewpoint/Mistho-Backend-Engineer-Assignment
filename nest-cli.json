@@ -34,6 +34,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/message-broker-client/tsconfig.lib.json"
       }
+    },
+    "employee": {
+      "type": "library",
+      "root": "libs/employee",
+      "entryFile": "index",
+      "sourceRoot": "libs/employee/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/employee/tsconfig.lib.json"
+      }
     }
   }
 }
