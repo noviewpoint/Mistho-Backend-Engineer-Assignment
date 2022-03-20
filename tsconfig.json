@@ -41,12 +41,6 @@
       ],
       "@app/message-broker-client/*": [
         "libs/message-broker-client/src/*"
-      ],
-      "@app/employee": [
-        "libs/employee/src"
-      ],
-      "@app/employee/*": [
-        "libs/employee/src/*"
       ]
     }
   }

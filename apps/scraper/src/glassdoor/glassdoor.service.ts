@@ -6,6 +6,7 @@ import { Browser } from 'puppeteer/lib/cjs/puppeteer/common/Browser';
 import { Page } from 'puppeteer/lib/cjs/puppeteer/common/Page';
 import { Db } from 'mongodb';
 import { ConfigService } from '@nestjs/config';
+import { Employee, EmployeeDetail } from '../../../../libs/interfaces';
 
 @Injectable()
 export class GlassdoorService {
@@ -26,8 +27,11 @@ export class GlassdoorService {
     const browser = await this.getHeadlessBrowser();
     const page = await this.getConfiguredPage(browser);
     await this.login(page);
-    await this.scrapeUserProfile(page);
+    const employee: Employee = await this.getUserProfile(page);
     await this.downloadUserResumePdf(page);
+    employee.pdfUrl = `${employee.name.replace(/ /g, '_')}.pdf`;
+    // TODO - handle failure when saving to db
+    await this.db.collection('employee').insertMany([employee]);
     await this.logout(page);
     await browser.close();
     console.log('work finished');
@@ -116,37 +120,36 @@ export class GlassdoorService {
     console.log('logout finished');
   }
 
-  async scrapeUserProfile(page: Page): Promise<void> {
+  async getUserProfile(page: Page): Promise<Employee> {
     await page.goto('https://www.glassdoor.com/member/profile/index.htm');
     await page.waitForSelector('#UserProfile', { timeout: 1000 });
     // #UserProfile must be populated with SPA data to successfully scrape the user profile
     const html = await page.content();
 
-    const [employee] = this.utilsService
+    const [name] = this.utilsService
       .getElementsFromDom('#ProfileInfo div:has(> h3)', html)
       .map((el) => {
         return this.utilsService.getTextFromDom('h3', el);
       });
 
-    const [employeePosition, employeeEmail, employeeLocation] =
-      this.utilsService
-        .getElementsFromDom('#ProfileInfo > div > div > div > div > div', html)
-        .map((el) => {
-          return this.utilsService.getTextFromDom(
-            'div:has(> span > svg) ~ div',
-            el,
-          );
-        })
-        .filter((text) => {
-          return (
-            text &&
-            !(
-              text.includes('View as:') ||
-              text.includes('Add website') ||
-              text.includes('Add phone number')
-            )
-          );
-        });
+    const [title, email, location] = this.utilsService
+      .getElementsFromDom('#ProfileInfo > div > div > div > div > div', html)
+      .map((el) => {
+        return this.utilsService.getTextFromDom(
+          'div:has(> span > svg) ~ div',
+          el,
+        );
+      })
+      .filter((text) => {
+        return (
+          text &&
+          !(
+            text.includes('View as:') ||
+            text.includes('Add website') ||
+            text.includes('Add phone number')
+          )
+        );
+      });
 
     const [aboutMe] = this.utilsService
       .getElementsFromDom('#AboutMe', html)
@@ -156,12 +159,12 @@ export class GlassdoorService {
           el,
         );
       });
-    const experience = this.utilsService
+    const jobs: EmployeeDetail[] = this.utilsService
       .getElementsFromDom('#UserProfile #Experience li', html)
       .map((el) => {
-        return {
+        const employeeDetail: EmployeeDetail = {
           title: this.utilsService.getTextFromDom('h3[data-test="title"]', el),
-          employer: this.utilsService.getTextFromDom(
+          institution: this.utilsService.getTextFromDom(
             'div[data-test="employer"]',
             el,
           ),
@@ -177,31 +180,35 @@ export class GlassdoorService {
             main: this.utilsService
               .getTextFromDom('p[data-test="description"]', el)
               .split(/\r?\n/)[0],
-            workResponsibilities: this.utilsService
+            responsibilities: this.utilsService
               .getTextFromDom('p[data-test="description"]', el)
               .split(/\r?\n/)
               .slice(1)
               .filter((x) => x),
           },
         };
+        return employeeDetail;
       });
-    const skills = this.utilsService
+    const skills: EmployeeDetail[] = this.utilsService
       .getElementsFromDom(
         '#UserProfile #Skills div[data-test="skillList"] div',
         html,
       )
       .map((el) => {
-        return { title: this.utilsService.getTextFromDom('span', el) };
+        const employeeDetail: EmployeeDetail = {
+          title: this.utilsService.getTextFromDom('span', el),
+        };
+        return employeeDetail;
       });
-    const education = this.utilsService
+    const education: EmployeeDetail[] = this.utilsService
       .getElementsFromDom('#UserProfile #Education li', html)
       .map((el) => {
-        return {
+        const employeeDetail: EmployeeDetail = {
           title: this.utilsService.getTextFromDom(
             'div[data-test="degree"]',
             el,
           ),
-          employer: this.utilsService.getTextFromDom(
+          institution: this.utilsService.getTextFromDom(
             'h3[data-test="university"]',
             el,
           ),
@@ -217,24 +224,26 @@ export class GlassdoorService {
             main: this.utilsService
               .getTextFromDom('p[data-test="description"]', el)
               .split(/\r?\n/)[0],
-            workResponsibilities: this.utilsService
+            responsibilities: this.utilsService
               .getTextFromDom('p[data-test="description"]', el)
               .split(/\r?\n/)
               .slice(1)
               .filter((x) => x),
           },
         };
+        return employeeDetail;
       });
-    const certifications = this.utilsService
+
+    const certifications: EmployeeDetail[] = this.utilsService
       .getElementsFromDom('#UserProfile #Certification li', html)
       .map((el) => {
-        return {
+        const employeeDetail: EmployeeDetail = {
           title: this.utilsService.getTextFromDom('div[data-test="title"]', el),
-          employer: this.utilsService.getTextFromDom(
+          institution: this.utilsService.getTextFromDom(
             'div[data-test="employer"]',
             el,
           ),
-          period: this.utilsService.getTextFromDom(
+          timePeriod: this.utilsService.getTextFromDom(
             'div[data-test="certificationperiod"]',
             el,
           ),
@@ -242,31 +251,29 @@ export class GlassdoorService {
             main: this.utilsService
               .getTextFromDom('p[data-test="description"]', el)
               .split(/\r?\n/)[0],
-            workResponsibilities: this.utilsService
+            responsibilities: this.utilsService
               .getTextFromDom('p[data-test="description"]', el)
               .split(/\r?\n/)
               .slice(1)
               .filter((x) => x),
           },
         };
+        return employeeDetail;
       });
 
-    // TODO - handle failure when saving to db
-    await this.db.collection('employee').insertMany([
-      {
-        employee,
-        employeePosition,
-        employeeEmail,
-        employeeLocation,
-        aboutMe,
-        experience,
-        skills,
-        education,
-        certifications,
-      },
-    ]);
+    console.log('getUserProfile finished');
 
-    console.log('scrapeUserProfile finished');
+    return {
+      name,
+      title,
+      email,
+      location,
+      aboutMe,
+      jobs,
+      skills,
+      education,
+      certifications,
+    };
   }
 
   async downloadUserResumePdf(page: Page): Promise<void> {
