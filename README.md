@@ -70,7 +70,7 @@ $ npm run start:dev scraper
 
 ## OpenAPI Swagger documentation
 
-To see API documentation, start the application and visit http://localhost:3000/api
+To see API documentation, start the app and visit http://localhost:4000/docs or http://localhost:3000/docs
 
 ## Test
 
