@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { ScraperModule } from './../src/scraper.module';
+import { ScraperModule } from '../src/scraper.module';
 
 describe('ScraperController (e2e)', () => {
   let app: INestApplication;
@@ -21,4 +21,6 @@ describe('ScraperController (e2e)', () => {
       .expect(200)
       .expect('Hello World!');
   });
+
+  // TODO - close opened connections
 });
