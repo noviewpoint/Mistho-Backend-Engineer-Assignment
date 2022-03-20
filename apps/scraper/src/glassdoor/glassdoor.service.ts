@@ -5,6 +5,7 @@ import { UtilsService } from '@app/utils';
 import { Browser } from 'puppeteer/lib/cjs/puppeteer/common/Browser';
 import { Page } from 'puppeteer/lib/cjs/puppeteer/common/Page';
 import { Db } from 'mongodb';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class GlassdoorService {
@@ -15,6 +16,7 @@ export class GlassdoorService {
     @Inject('DATABASE_CLIENT')
     private db: Db,
     private utilsService: UtilsService,
+    private configService: ConfigService,
   ) {
     this.work();
   }
@@ -61,38 +63,47 @@ export class GlassdoorService {
       '#Skills',
       userProfileWhole,
     );
+    const education = this.utilsService.getTextFromDom(
+      '#Education',
+      userProfileWhole,
+    );
     const certification = this.utilsService.getTextFromDom(
       '#Certification',
       userProfileWhole,
     );
 
-    // TODO - handle failure
+    // TODO - handle failure when saving to db
     await this.db
       .collection('employee')
       .insertMany([
-        { profileInfo, aboutMe, experience, skills, certification },
+        { profileInfo, aboutMe, experience, skills, education, certification },
       ]);
 
-    return;
+    console.log({
+      profileInfo,
+      aboutMe,
+      experience,
+      skills,
+      education,
+      certification,
+    });
   }
 
   async downloadUserResumePdf(page: Page): Promise<void> {
     const downloadPath = __dirname;
-    // await page._client.send('Page.setDownloadBehavior', {
-    //   behavior: 'allow',
-    //   downloadPath,
-    // });
-    // const content = await page.content();
-    // const x = 3;
-    // await page.goto('https://www.glassdoor.com/member/profile/resumePdf.htm');
-    // console.log(1);
-    // const x = await this.utilsService.fetchPdf(
-    //   'https://www.glassdoor.com/member/profile/resumePdf.htm',
-    // );
-    // await page.click(
-    //   '#ProfileInfo .profileInfoStyle__actions___3-CvK > div:nth-child(2) > button',
-    // );
-    // await page.waitFor(5000);
+    // TODO - workaround so typescript lets access to _client
+    await page['_client'].send('Page.setDownloadBehavior', {
+      behavior: 'allow',
+      downloadPath,
+    });
+    await goto(page, 'https://www.glassdoor.com/member/profile/resumePdf.htm');
+    async function goto(page, link) {
+      return page.evaluate((link) => {
+        location.href = link;
+      }, link);
+    }
+    await page.waitForNavigation({ waitUntil: 'networkidle0' });
+    console.log('Picture should be saved');
     return;
   }
 
@@ -100,11 +111,64 @@ export class GlassdoorService {
     const page = await browser.newPage();
     await page.goto(this.url);
     await page.click(`button.LockedHomeHeaderStyles__signInButton`);
+    await page.type(
+      'form[name=emailSignInForm] input#modalUserPassword',
+      this.configService.get<string>('GLASSDOOR_USERNAME'),
+    );
+    await page.type(
+      'form[name=emailSignInForm] input#modalUserEmail',
+      this.configService.get<string>('GLASSDOOR_PASSWORD'),
+    );
+    await page.keyboard.press('Enter');
+
+    // hacky way of handling wrong credentials
+
+    try {
+      await page.waitForNavigation({
+        timeout: 1000,
+      });
+    } catch (ex) {
+      // if correct credentials provided, puppeteer exception Navigation timeout of 1000 ms exceeded happens
+      // if wrong credentials provided, puppeteer exception Navigation timeout of 1000 ms exceeded happens
+      if (ex.name !== 'TimeoutError') {
+        throw ex;
+      }
+    }
+
+    let wrongLoginInfo;
+    try {
+      wrongLoginInfo = await page.$eval(
+        'form[name=emailSignInForm] #descriptionColor',
+        (heading) => heading['innerText'],
+      );
+    } catch (ex) {
+      // if correct credentials provided, navigation happened, and you are evaluating an element that does not exist
+      if (
+        ex.message !==
+        'Execution context was destroyed, most likely because of a navigation.'
+      ) {
+        throw ex;
+      }
+    }
+
+    if (wrongLoginInfo) {
+      // if wrong credentials provided, throw an error with site generated message about unsuccessful login
+      throw new Error(wrongLoginInfo);
+    }
+
+    // TODO - implement retry
+
+    return page;
+  }
+
+  private async logout(page: Page): Promise<Page> {
+    await page.click(`button.LockedHomeHeaderStyles__signInButton`);
     await page.type('form input#modalUserPassword', 'ravi.van.test@gmail.com');
     await page.type('form input#modalUserEmail', 'ravi.van.test@gmail.com');
     await page.keyboard.press('Enter');
     // TODO - handle invalid login case
     await page.waitForNavigation();
     return page;
+    // #SiteNav > nav.d-flex.align-items-center.HeaderStyles__navigationBackground.HeaderStyles__relativePosition > div > div > div > div:nth-child(7) > div > div.PopupStyles__popupContainer > div > div > div > div > div > ul:nth-child(4) > li:nth-child(2) > a > div > span > span
   }
 }
