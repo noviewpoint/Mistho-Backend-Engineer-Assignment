@@ -17,15 +17,9 @@ export class GlassdoorService {
     private db: Db,
     private utilsService: UtilsService,
     private configService: ConfigService,
-  ) {
-    this.work();
-  }
+  ) {}
 
-  private async work(): Promise<void> {
-    // await this.client.emit(
-    //   { cmd: 'scrape' },
-    //   'Progressive Coder' + Math.random(),
-    // );
+  public async work(): Promise<void> {
     const browser: Browser = await this.getHeadlessBrowser();
     const page: Page = await this.login(browser);
     await this.scrapeUserProfile(page);
@@ -102,7 +96,15 @@ export class GlassdoorService {
         location.href = link;
       }, link);
     }
-    await page.waitForNavigation({ waitUntil: 'networkidle0' });
+    try {
+      await page.waitForNavigation({
+        timeout: 5000,
+      });
+    } catch (ex) {
+      if (ex.name !== 'TimeoutError') {
+        throw ex;
+      }
+    }
     console.log('Picture should be saved');
     return;
   }
