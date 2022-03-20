@@ -21,9 +21,10 @@ async function bootstrap() {
     .setDescription('Mistho scraper application')
     .setVersion('0.1')
     .addTag('scraper')
+    .addTag('glassdoor')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('scraper', app, document);
+  SwaggerModule.setup('docs', app, document);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   // NO MONGO EXCEPTION FILTER FOR SCRAPER
 
