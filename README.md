@@ -53,14 +53,19 @@ this file before starting the application.
 ## Running the application
 
 ```bash
-# development
-$ npm run start
+# development for api
+$ npm run start api
 
-# watch mode
-$ npm run start:dev
+# development for scraper
+$ npm run start scraper
 
-# production mode
-$ npm run start:prod
+# watch mode for api
+$ npm run start:dev api
+
+# watch mode for scraper
+$ npm run start:dev scraper
+
+# TODO - production modes for api and scraper
 ```
 
 ## OpenAPI Swagger documentation
@@ -70,12 +75,15 @@ To see API documentation, start the application and visit http://localhost:3000/
 ## Test
 
 ```bash
-# unit tests
+# unit tests for whole repo
 $ npm run test
 
-# e2e tests
-$ npm run test:e2e
+# e2e tests for api
+$ npm run test:e2e:api
 
-# test coverage
+# e2e tests for scraper
+$ npm run test:e2e:scraper
+
+# test coverage for whole repo
 $ npm run test:cov
 ```
