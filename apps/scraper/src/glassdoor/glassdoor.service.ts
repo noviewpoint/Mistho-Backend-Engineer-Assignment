@@ -21,7 +21,8 @@ export class GlassdoorService {
 
   public async work(): Promise<void> {
     const browser: Browser = await this.getHeadlessBrowser();
-    const page: Page = await this.login(browser);
+    const page: Page = await browser.newPage();
+    await this.login(page);
     await this.scrapeUserProfile(page);
     await this.downloadUserResumePdf(page);
     await browser.close();
@@ -84,33 +85,24 @@ export class GlassdoorService {
   }
 
   async downloadUserResumePdf(page: Page): Promise<void> {
-    const downloadPath = __dirname;
     // TODO - workaround so typescript lets access to _client
     await page['_client'].send('Page.setDownloadBehavior', {
       behavior: 'allow',
-      downloadPath,
+      downloadPath: process.cwd(),
     });
-    await goto(page, 'https://www.glassdoor.com/member/profile/resumePdf.htm');
-    async function goto(page, link) {
-      return page.evaluate((link) => {
-        location.href = link;
-      }, link);
-    }
     try {
-      await page.waitForNavigation({
-        timeout: 5000,
-      });
+      await page.goto('https://www.glassdoor.com/member/profile/resumePdf.htm');
     } catch (ex) {
-      if (ex.name !== 'TimeoutError') {
-        throw ex;
-      }
+      console.error(123);
     }
+    await page.waitForNavigation({
+      timeout: 5000,
+    });
     console.log('Picture should be saved');
     return;
   }
 
-  private async login(browser: Browser): Promise<Page> {
-    const page = await browser.newPage();
+  private async login(page: Page): Promise<void> {
     await page.goto(this.url);
     await page.click(`button.LockedHomeHeaderStyles__signInButton`);
     await page.type(
@@ -159,8 +151,6 @@ export class GlassdoorService {
     }
 
     // TODO - implement retry
-
-    return page;
   }
 
   private async logout(page: Page): Promise<Page> {

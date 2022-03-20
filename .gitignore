@@ -35,3 +35,6 @@ lerna-debug.log*
 
 # local env
 .env
+
+# other
+Ravi_Van.pdf
