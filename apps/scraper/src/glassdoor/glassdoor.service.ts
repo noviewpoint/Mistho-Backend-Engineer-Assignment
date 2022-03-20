@@ -20,12 +20,15 @@ export class GlassdoorService {
   ) {}
 
   public async work(): Promise<void> {
+    console.log('work started');
     const browser: Browser = await this.getHeadlessBrowser();
     const page: Page = await browser.newPage();
     await this.login(page);
     await this.scrapeUserProfile(page);
     await this.downloadUserResumePdf(page);
+    await this.logout(page);
     await browser.close();
+    console.log('work finished');
   }
 
   private async getHeadlessBrowser(): Promise<Browser> {
@@ -74,14 +77,7 @@ export class GlassdoorService {
         { profileInfo, aboutMe, experience, skills, education, certification },
       ]);
 
-    console.log({
-      profileInfo,
-      aboutMe,
-      experience,
-      skills,
-      education,
-      certification,
-    });
+    console.log('scrapeUserProfile finished');
   }
 
   async downloadUserResumePdf(page: Page): Promise<void> {
@@ -93,13 +89,22 @@ export class GlassdoorService {
     try {
       await page.goto('https://www.glassdoor.com/member/profile/resumePdf.htm');
     } catch (ex) {
-      console.error(123);
+      console.error(ex);
     }
-    await page.waitForNavigation({
-      timeout: 5000,
-    });
-    console.log('Picture should be saved');
-    return;
+
+    try {
+      await page.waitForNavigation({
+        timeout: 1000,
+      });
+    } catch (ex) {
+      // if correct credentials provided, puppeteer exception Navigation timeout of 1000 ms exceeded happens
+      // if wrong credentials provided, puppeteer exception Navigation timeout of 1000 ms exceeded happens
+      if (ex.name !== 'TimeoutError') {
+        throw ex;
+      }
+    }
+
+    console.log('downloadUserResumePdf finished');
   }
 
   private async login(page: Page): Promise<void> {
@@ -151,16 +156,19 @@ export class GlassdoorService {
     }
 
     // TODO - implement retry
+
+    console.log('login finished');
   }
 
-  private async logout(page: Page): Promise<Page> {
-    await page.click(`button.LockedHomeHeaderStyles__signInButton`);
-    await page.type('form input#modalUserPassword', 'ravi.van.test@gmail.com');
-    await page.type('form input#modalUserEmail', 'ravi.van.test@gmail.com');
-    await page.keyboard.press('Enter');
-    // TODO - handle invalid login case
-    await page.waitForNavigation();
-    return page;
+  private async logout(page: Page): Promise<void> {
+    console.log('logout finished');
+    // await page.click(`button.LockedHomeHeaderStyles__signInButton`);
+    // await page.type('form input#modalUserPassword', 'ravi.van.test@gmail.com');
+    // await page.type('form input#modalUserEmail', 'ravi.van.test@gmail.com');
+    // await page.keyboard.press('Enter');
+    // // TODO - handle invalid login case
+    // await page.waitForNavigation();
+    // return page;
     // #SiteNav > nav.d-flex.align-items-center.HeaderStyles__navigationBackground.HeaderStyles__relativePosition > div > div > div > div:nth-child(7) > div > div.PopupStyles__popupContainer > div > div > div > div > div > ul:nth-child(4) > li:nth-child(2) > a > div > span > span
   }
 }
