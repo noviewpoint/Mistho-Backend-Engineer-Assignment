@@ -17,12 +17,14 @@ export class GlassdoorService {
     private db: Db,
     private utilsService: UtilsService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    this.work();
+  }
 
   public async work(): Promise<void> {
     console.log('work started');
-    const browser: Browser = await this.getHeadlessBrowser();
-    const page: Page = await browser.newPage();
+    const browser = await this.getHeadlessBrowser();
+    const page = await this.getConfiguredPage(browser);
     await this.login(page);
     await this.scrapeUserProfile(page);
     await this.downloadUserResumePdf(page);
@@ -35,76 +37,14 @@ export class GlassdoorService {
     return puppeteer.launch({ headless: true });
   }
 
-  async scrapeUserProfile(page: Page): Promise<void> {
-    await page.goto('https://www.glassdoor.com/member/profile/index.htm');
-    await page.waitForSelector('#UserProfile', { timeout: 1000 });
-    // #UserProfile must be populated with SPA data to successfully scrape the user profile
-    const html = await page.content();
-    const [userProfileWhole] = this.utilsService.getElementsFromDom(
-      '#UserProfile',
-      html,
-    );
-
-    const profileInfo = this.utilsService.getTextFromDom(
-      '#ProfileInfo',
-      userProfileWhole,
-    );
-    const aboutMe = this.utilsService.getTextFromDom(
-      '#AboutMe',
-      userProfileWhole,
-    );
-    const experience = this.utilsService.getTextFromDom(
-      '#Experience',
-      userProfileWhole,
-    );
-    const skills = this.utilsService.getTextFromDom(
-      '#Skills',
-      userProfileWhole,
-    );
-    const education = this.utilsService.getTextFromDom(
-      '#Education',
-      userProfileWhole,
-    );
-    const certification = this.utilsService.getTextFromDom(
-      '#Certification',
-      userProfileWhole,
-    );
-
-    // TODO - handle failure when saving to db
-    await this.db
-      .collection('employee')
-      .insertMany([
-        { profileInfo, aboutMe, experience, skills, education, certification },
-      ]);
-
-    console.log('scrapeUserProfile finished');
-  }
-
-  async downloadUserResumePdf(page: Page): Promise<void> {
-    // TODO - workaround so typescript lets access to _client
+  private async getConfiguredPage(browser: Browser): Promise<Page> {
+    const page = await browser.newPage();
+    // TODO - workaround so typescript lets access to _client (private prop)
     await page['_client'].send('Page.setDownloadBehavior', {
       behavior: 'allow',
       downloadPath: process.cwd(),
     });
-    try {
-      await page.goto('https://www.glassdoor.com/member/profile/resumePdf.htm');
-    } catch (ex) {
-      console.error(ex);
-    }
-
-    try {
-      await page.waitForNavigation({
-        timeout: 1000,
-      });
-    } catch (ex) {
-      // if correct credentials provided, puppeteer exception Navigation timeout of 1000 ms exceeded happens
-      // if wrong credentials provided, puppeteer exception Navigation timeout of 1000 ms exceeded happens
-      if (ex.name !== 'TimeoutError') {
-        throw ex;
-      }
-    }
-
-    console.log('downloadUserResumePdf finished');
+    return page;
   }
 
   private async login(page: Page): Promise<void> {
@@ -161,14 +101,87 @@ export class GlassdoorService {
   }
 
   private async logout(page: Page): Promise<void> {
+    await page.click('button[title="Open Navigation Menu"');
+    const anchor = await page.waitForSelector(
+      `#HamburgerButton a[href='/logout.htm']`,
+      {
+        timeout: 1000,
+      },
+    );
+    // https://stackoverflow.com/questions/70892717/error-node-is-either-not-clickable-or-not-an-htmlelement-puppeteer-when-i-tri/70924121
+    await page.evaluate((btn) => {
+      // this executes in the page
+      btn.click();
+    }, anchor);
     console.log('logout finished');
-    // await page.click(`button.LockedHomeHeaderStyles__signInButton`);
-    // await page.type('form input#modalUserPassword', 'ravi.van.test@gmail.com');
-    // await page.type('form input#modalUserEmail', 'ravi.van.test@gmail.com');
-    // await page.keyboard.press('Enter');
-    // // TODO - handle invalid login case
-    // await page.waitForNavigation();
-    // return page;
-    // #SiteNav > nav.d-flex.align-items-center.HeaderStyles__navigationBackground.HeaderStyles__relativePosition > div > div > div > div:nth-child(7) > div > div.PopupStyles__popupContainer > div > div > div > div > div > ul:nth-child(4) > li:nth-child(2) > a > div > span > span
+  }
+
+  async scrapeUserProfile(page: Page): Promise<void> {
+    await page.goto('https://www.glassdoor.com/member/profile/index.htm');
+    await page.waitForSelector('#UserProfile', { timeout: 1000 });
+    // #UserProfile must be populated with SPA data to successfully scrape the user profile
+    const html = await page.content();
+    const [userProfileWhole] = this.utilsService.getElementsFromDom(
+      '#UserProfile',
+      html,
+    );
+
+    const profileInfo = this.utilsService.getTextFromDom(
+      '#ProfileInfo',
+      userProfileWhole,
+    );
+    const aboutMe = this.utilsService.getTextFromDom(
+      '#AboutMe',
+      userProfileWhole,
+    );
+    const experience = this.utilsService.getTextFromDom(
+      '#Experience',
+      userProfileWhole,
+    );
+    const skills = this.utilsService.getTextFromDom(
+      '#Skills',
+      userProfileWhole,
+    );
+    const education = this.utilsService.getTextFromDom(
+      '#Education',
+      userProfileWhole,
+    );
+    const certification = this.utilsService.getTextFromDom(
+      '#Certification',
+      userProfileWhole,
+    );
+
+    // TODO - handle failure when saving to db
+    await this.db
+      .collection('employee')
+      .insertMany([
+        { profileInfo, aboutMe, experience, skills, education, certification },
+      ]);
+
+    console.log('scrapeUserProfile finished');
+  }
+
+  async downloadUserResumePdf(page: Page): Promise<void> {
+    try {
+      await page.goto('https://www.glassdoor.com/member/profile/resumePdf.htm');
+    } catch (ex) {
+      if (!ex.message.includes('net::ERR_ABORTED')) {
+        throw ex;
+      }
+    }
+
+    try {
+      await page.waitForNavigation({
+        timeout: 1000,
+      });
+    } catch (ex) {
+      // if correct credentials provided, puppeteer exception Navigation timeout of 1000 ms exceeded happens
+      // if wrong credentials provided, puppeteer exception Navigation timeout of 1000 ms exceeded happens
+      if (ex.name !== 'TimeoutError') {
+        throw ex;
+      }
+    }
+
+    console.log('downloadUserResumePdf finished');
   }
 }
