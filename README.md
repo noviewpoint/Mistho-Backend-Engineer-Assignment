@@ -5,6 +5,14 @@
 API that gathers data from the Glassdoor website. App is built using [Nest](https://github.com/nestjs/nest) framework TypeScript
 starter repository.
 
+# How to use? & What does it do? & Assignment Bonus section
+
+There are two parts of the application: one is an API and one is a worker (scraper).
+API exposes 4 HTTP endpoints for the client to use (see Swagger auto-generated docs). Via API endpoint you can publish a message to the queue that is consumed by the worker.
+Worker consumes a message and begins scraping the website, saves the employee data into the database, and saves .pdf file to server hard drive.
+
+Bonus: By using a dedicated worker and a queue, background processes do not block the main API process. You can also scale workers independently of the number of API processes.
+
 ## Cloning
 
 ```bash
