@@ -15,9 +15,9 @@ describe('ScraperController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/scraper (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/scraper')
       .expect(200)
       .expect('Hello World!');
   });
