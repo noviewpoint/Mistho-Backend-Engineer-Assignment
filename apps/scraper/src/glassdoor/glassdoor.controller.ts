@@ -10,6 +10,6 @@ export class GlassdoorController {
 
   @MessagePattern({ cmd: 'scrape' })
   async scrape(): Promise<void> {
-    await this.glassdoorService.work();
+    await this.glassdoorService.scrape();
   }
 }

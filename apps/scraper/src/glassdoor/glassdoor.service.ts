@@ -18,23 +18,19 @@ export class GlassdoorService {
     private db: Db,
     private utilsService: UtilsService,
     private configService: ConfigService,
-  ) {
-    this.work();
-  }
+  ) {}
 
-  public async work(): Promise<void> {
-    console.log('work started');
+  public async scrape(): Promise<void> {
+    console.log('scrape started');
     const browser = await this.getHeadlessBrowser();
     const page = await this.getConfiguredPage(browser);
     await this.login(page);
     const employee: Employee = await this.getUserProfile(page);
+    await this.storeToDatabase(employee);
     await this.downloadUserResumePdf(page);
-    employee.pdfUrl = `${employee.name.replace(/ /g, '_')}.pdf`;
-    // TODO - handle failure when saving to db
-    await this.db.collection('employee').insertMany([employee]);
     await this.logout(page);
     await browser.close();
-    console.log('work finished');
+    console.log('scrape finished');
   }
 
   private async getHeadlessBrowser(): Promise<Browser> {
@@ -49,6 +45,11 @@ export class GlassdoorService {
       downloadPath: process.cwd(),
     });
     return page;
+  }
+
+  private async storeToDatabase(employee: Employee): Promise<void> {
+    // TODO - handle failure when saving to db
+    await this.db.collection('employee').insertMany([employee]);
   }
 
   private async login(page: Page): Promise<void> {
@@ -120,7 +121,7 @@ export class GlassdoorService {
     console.log('logout finished');
   }
 
-  async getUserProfile(page: Page): Promise<Employee> {
+  private async getUserProfile(page: Page): Promise<Employee> {
     await page.goto('https://www.glassdoor.com/member/profile/index.htm');
     await page.waitForSelector('#UserProfile', { timeout: 1000 });
     // #UserProfile must be populated with SPA data to successfully scrape the user profile
@@ -273,10 +274,11 @@ export class GlassdoorService {
       skills,
       education,
       certifications,
+      pdfUrl: `${name.replace(/ /g, '_')}.pdf`,
     };
   }
 
-  async downloadUserResumePdf(page: Page): Promise<void> {
+  private async downloadUserResumePdf(page: Page): Promise<void> {
     try {
       await page.goto('https://www.glassdoor.com/member/profile/resumePdf.htm');
     } catch (ex) {
