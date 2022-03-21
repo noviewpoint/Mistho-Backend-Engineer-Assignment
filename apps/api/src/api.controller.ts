@@ -10,8 +10,9 @@ import {
 import { ApiService } from './api.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags } from '@nestjs/swagger';
-import { createReadStream } from 'fs';
+import { createReadStream, ReadStream } from 'fs';
 import { Db } from 'mongodb';
+import { Employee } from '../../../libs/interfaces';
 
 @ApiTags('api')
 @Controller('api')
@@ -36,11 +37,11 @@ export class ApiController {
   }
 
   @Get('employee/:name')
-  async getEmployee(@Param('name') employeeName: string) {
-    const employees = await this.db
+  async getEmployee(@Param('name') employeeName: string): Promise<Employee[]> {
+    const employees = (await this.db
       .collection('employee')
       .find({ name: employeeName })
-      .toArray();
+      .toArray()) as unknown[] as Employee[];
     return employees;
   }
 
@@ -48,7 +49,7 @@ export class ApiController {
   @HttpCode(200)
   @Header('Content-Type', 'application/pdf')
   @Header('Content-Disposition', 'attachment; filename=employeeInfo.pdf')
-  async downloadPdf(@Param() employeeName: string) {
+  async downloadPdf(@Param() employeeName: string): Promise<ReadStream> {
     return createReadStream(`${process.cwd()}/${employeeName}employeeName.pdf`);
   }
 }

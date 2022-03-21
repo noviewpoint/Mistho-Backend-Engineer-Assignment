@@ -2,7 +2,7 @@
 
 ## Description
 
-Mistho Backend Engineer Assignment. App is built using [Nest](https://github.com/nestjs/nest) framework TypeScript
+API that gathers data from the Glassdoor website. App is built using [Nest](https://github.com/nestjs/nest) framework TypeScript
 starter repository.
 
 ## Installation
@@ -65,12 +65,12 @@ $ npm run start:dev api
 # watch mode for scraper
 $ npm run start:dev scraper
 
-# TODO - production modes for api and scraper
+# TODO - production modes for api and scraper currently not working
 ```
 
 ## OpenAPI Swagger documentation
 
-To see API documentation, start the app and visit http://localhost:4000/docs or http://localhost:3000/docs
+To see API documentation, start the app and visit `http://localhost:4000/docs` or `http://localhost:3000/docs` (this depends on `API_HTTP_PORT` and `SCRAPER_HTTP_PORT` values from environment file).
 
 ## Test
 

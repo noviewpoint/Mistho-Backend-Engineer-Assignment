@@ -9,7 +9,7 @@ export class GlassdoorController {
   constructor(private readonly glassdoorService: GlassdoorService) {}
 
   @MessagePattern({ cmd: 'scrape' })
-  async scrape() {
+  async scrape(): Promise<void> {
     await this.glassdoorService.work();
   }
 }

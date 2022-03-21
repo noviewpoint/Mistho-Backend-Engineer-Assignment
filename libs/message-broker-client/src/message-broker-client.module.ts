@@ -8,7 +8,9 @@ import { ConfigService } from '@nestjs/config';
     MessageBrokerClientService,
     {
       provide: 'MESSAGE_BROKER_CLIENT',
-      useFactory: async (configService: ConfigService) => {
+      useFactory: async (
+        configService: ConfigService,
+      ): Promise<ClientProxyFactory> => {
         // TODO - CHANGE THIS TO SUPPORT MULTIPLE QUEUES PER CLIENT
         // Nest waits for rmq connection to be resolved before starting the application
         return ClientProxyFactory.create({
