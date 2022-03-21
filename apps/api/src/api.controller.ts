@@ -10,7 +10,8 @@ import {
 import { ApiService } from './api.service';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags } from '@nestjs/swagger';
-import { createReadStream, ReadStream } from 'fs';
+import { constants, createReadStream, ReadStream } from 'fs';
+import { access } from 'fs/promises';
 import { Db } from 'mongodb';
 import { Employee } from '../../../libs/interfaces';
 
@@ -45,11 +46,17 @@ export class ApiController {
     return employees;
   }
 
-  @Get('downloadPdf')
+  @Get('employee/download')
   @HttpCode(200)
   @Header('Content-Type', 'application/pdf')
-  @Header('Content-Disposition', 'attachment; filename=employeeInfo.pdf')
-  async downloadPdf(@Param() employeeName: string): Promise<ReadStream> {
-    return createReadStream(`${process.cwd()}/${employeeName}employeeName.pdf`);
+  @Header('Content-Disposition', 'attachment; filename=employeeInformation.pdf')
+  async downloadEmployeeFile(
+    @Param() employeeName: string,
+  ): Promise<ReadStream> {
+    const filePath = `${process.cwd()}/${employeeName}.pdf`;
+    const exists = access(filePath, constants.F_OK);
+    if (exists) {
+      return createReadStream(`${process.cwd()}/${employeeName}.pdf`);
+    }
   }
 }
