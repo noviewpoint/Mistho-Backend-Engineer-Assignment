@@ -48,19 +48,23 @@ export class ApiController {
     return employees;
   }
 
-  @Get('employee/download')
+  @Get('employee/download/:employeeName')
   @HttpCode(200)
   @Header('Content-Type', 'application/pdf')
   @Header('Content-Disposition', 'attachment; filename=employeeInformation.pdf')
   async downloadEmployeeFile(
-    @Param() employeeName: string,
+    @Param('employeeName') employeeName: string,
   ): Promise<ReadStream> {
+    // TODO - better handling of error
     const filePath = `${process.cwd()}/${employeeName}.pdf`;
     try {
       await access(filePath, constants.F_OK);
       return createReadStream(`${process.cwd()}/${employeeName}.pdf`);
     } catch (ex) {
-      throw new HttpException(ex.message, HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Problem while downloading the requested file.',
+        HttpStatus.BAD_REQUEST,
+      );
     }
   }
 }
