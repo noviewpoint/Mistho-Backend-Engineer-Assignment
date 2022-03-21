@@ -3,6 +3,8 @@ import {
   Get,
   Header,
   HttpCode,
+  HttpException,
+  HttpStatus,
   Inject,
   Param,
   Post,
@@ -54,9 +56,11 @@ export class ApiController {
     @Param() employeeName: string,
   ): Promise<ReadStream> {
     const filePath = `${process.cwd()}/${employeeName}.pdf`;
-    const exists = access(filePath, constants.F_OK);
-    if (exists) {
+    try {
+      await access(filePath, constants.F_OK);
       return createReadStream(`${process.cwd()}/${employeeName}.pdf`);
+    } catch (ex) {
+      throw new HttpException(ex.message, HttpStatus.BAD_REQUEST);
     }
   }
 }
