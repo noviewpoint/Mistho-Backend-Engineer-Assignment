@@ -5,6 +5,13 @@
 API that gathers data from the Glassdoor website. App is built using [Nest](https://github.com/nestjs/nest) framework TypeScript
 starter repository.
 
+## Cloning
+
+```bash
+$ git clone https://github.com/noviewpoint/Mistho-Backend-Engineer-Assignment
+$ cd Mistho-Backend-Engineer-Assignment
+```
+
 ## Installation
 
 ```bash
@@ -48,7 +55,11 @@ on `http://localhost:15672`.
 ## Environment variables
 
 Create a copy of `.env.dist` file named `.env` in the root of the repository. Set according environment variables in
-this file before starting the application.
+this file before starting the application. For the purpose of demo of this app, `.env.dist` values are already set even though this is not considered a good practice.
+
+```bash
+$ cp .env.dist .env
+```
 
 ## Running the application
 
@@ -73,6 +84,8 @@ $ npm run start:dev scraper
 To see API documentation, start the app and visit `http://localhost:4000/docs` or `http://localhost:3000/docs` (this depends on `API_HTTP_PORT` and `SCRAPER_HTTP_PORT` values from environment file).
 
 ## Test
+
+Only basic auto-generated tests are included for the app because I did not have the time doing more of them.
 
 ```bash
 # unit tests for whole repo
