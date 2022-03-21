@@ -33,6 +33,7 @@ async function bootstrap(): Promise<void> {
       {
         transport: Transport.RMQ,
         options: {
+          prefetchCount: 1,
           urls: [configService.get<string>('MESSAGE_BROKER_CONNECTION')],
           queue,
           queueOptions: {
